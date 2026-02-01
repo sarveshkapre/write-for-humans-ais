@@ -6,12 +6,15 @@ import { slugFromPath } from "./slug.js";
 import { sha256File, sha256String } from "./hash.js";
 import { loadQuestions, runEval } from "./eval.js";
 
+type Manifest = Record<string, { sha256: string }>;
+
 export type BuildOptions = {
   inputDir: string;
   outDir: string;
   runEval: boolean;
   safetyRoot?: string;
   force?: boolean;
+  generatedAt?: string;
 };
 
 type PageOutput = {
@@ -107,18 +110,34 @@ async function writeClaims(outDir: string, inputDir: string): Promise<string> {
   return dest;
 }
 
-async function writeManifest(outDir: string, outputFiles: string[]): Promise<string> {
-  const manifest: Record<string, { sha256: string }> = {};
+async function computeManifest(outDir: string, outputFiles: string[]): Promise<Manifest> {
+  const manifest: Manifest = {};
   for (const filePath of outputFiles) {
     const rel = path.relative(outDir, filePath).replace(/\\/g, "/");
     manifest[rel] = { sha256: await sha256File(filePath) };
   }
+  return manifest;
+}
+
+function fingerprintFromManifest(manifest: Manifest): string {
+  const entries = Object.entries(manifest)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([relPath, { sha256 }]) => [relPath, sha256]);
+  return sha256String(JSON.stringify(entries));
+}
+
+async function writeManifest(outDir: string, manifest: Manifest): Promise<string> {
   const manifestPath = path.join(outDir, "manifest.json");
-  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), "utf-8");
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n", "utf-8");
   return manifestPath;
 }
 
-async function writeEval(outDir: string, inputDir: string, pages: PageOutput[]): Promise<string> {
+async function writeEval(
+  outDir: string,
+  inputDir: string,
+  pages: PageOutput[],
+  generatedAt: string,
+): Promise<string> {
   const questions = await loadQuestions(inputDir);
   const evalDir = path.join(outDir, "eval");
   await fs.mkdir(evalDir, { recursive: true });
@@ -126,12 +145,12 @@ async function writeEval(outDir: string, inputDir: string, pages: PageOutput[]):
 
   if (!questions || questions.length === 0) {
     const emptyReport = {
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       totalQuestions: 0,
       averageCoverage: null,
       results: [],
     };
-    await fs.writeFile(reportPath, JSON.stringify(emptyReport, null, 2), "utf-8");
+    await fs.writeFile(reportPath, JSON.stringify(emptyReport, null, 2) + "\n", "utf-8");
     return reportPath;
   }
 
@@ -139,8 +158,8 @@ async function writeEval(outDir: string, inputDir: string, pages: PageOutput[]):
     path: `markdown/${path.basename(page.markdownPath)}`,
     content: page.markdown,
   }));
-  const report = runEval(questions, corpus);
-  await fs.writeFile(reportPath, JSON.stringify(report, null, 2), "utf-8");
+  const report = runEval(questions, corpus, generatedAt);
+  await fs.writeFile(reportPath, JSON.stringify(report, null, 2) + "\n", "utf-8");
   return reportPath;
 }
 
@@ -149,6 +168,7 @@ export async function buildSite(options: BuildOptions): Promise<void> {
   const outDir = path.resolve(options.outDir);
 
   await ensureEmptyDir(outDir, { inputDir, safetyRoot: options.safetyRoot, force: options.force });
+  const generatedAt = options.generatedAt ?? new Date(0).toISOString();
 
   const pages = await buildPages(inputDir, outDir);
   const outputFiles: string[] = pages.map((p) => p.markdownPath);
@@ -160,13 +180,22 @@ export async function buildSite(options: BuildOptions): Promise<void> {
   outputFiles.push(claimsFile);
 
   if (options.runEval) {
-    const evalReport = await writeEval(outDir, inputDir, pages);
+    const evalReport = await writeEval(outDir, inputDir, pages, generatedAt);
     outputFiles.push(evalReport);
   }
 
-  const manifestPath = await writeManifest(outDir, outputFiles);
-  outputFiles.push(manifestPath);
+  const baseManifest = await computeManifest(outDir, outputFiles);
+  const fingerprint = fingerprintFromManifest(baseManifest);
+  const fingerprintPath = path.join(outDir, "build.fingerprint");
+  await fs.writeFile(fingerprintPath, `${fingerprint}\n`, "utf-8");
 
-  const fingerprint = sha256String(JSON.stringify(outputFiles.sort()));
-  await fs.writeFile(path.join(outDir, "build.fingerprint"), `${fingerprint}\n`, "utf-8");
+  const fullManifest: Manifest = {
+    ...baseManifest,
+    [path.relative(outDir, fingerprintPath).replace(/\\/g, "/")]: { sha256: await sha256File(fingerprintPath) },
+  };
+
+  const manifestPath = await writeManifest(outDir, fullManifest);
+  outputFiles.push(fingerprintPath, manifestPath);
+
+  // Note: build.fingerprint intentionally excludes itself and manifest.json.
 }

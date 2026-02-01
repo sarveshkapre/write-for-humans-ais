@@ -17,7 +17,13 @@ async function readVersion(): Promise<string | null> {
   }
 }
 
-function parseArgs(argv: string[]): { inputDir: string; outDir: string; runEval: boolean; force: boolean } {
+function parseArgs(argv: string[]): {
+  inputDir: string;
+  outDir: string;
+  runEval: boolean;
+  force: boolean;
+  timestamps: boolean;
+} {
   const args = new Map<string, string | boolean>();
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
@@ -36,8 +42,9 @@ function parseArgs(argv: string[]): { inputDir: string; outDir: string; runEval:
   const outDir = String(args.get("out") ?? "dist");
   const runEval = !args.has("no-eval");
   const force = Boolean(args.get("force"));
+  const timestamps = Boolean(args.get("timestamps"));
 
-  return { inputDir, outDir, runEval, force };
+  return { inputDir, outDir, runEval, force, timestamps };
 }
 
 async function printHelp(): Promise<void> {
@@ -54,6 +61,7 @@ async function printHelp(): Promise<void> {
       "  --out <dir>     Output directory (default: dist)",
       "  --no-eval       Skip eval report generation",
       "  --force         Allow deleting out dir outside cwd (dangerous)",
+      "  --timestamps    Include wall-clock timestamps in outputs (non-deterministic)",
       "  --version, -v   Print version and exit",
       "  --help, -h      Print help and exit",
       "",
@@ -76,11 +84,18 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { inputDir, outDir, runEval, force } = parseArgs(args);
+  const { inputDir, outDir, runEval, force, timestamps } = parseArgs(args);
   const resolvedInput = path.resolve(process.cwd(), inputDir);
   const resolvedOut = path.resolve(process.cwd(), outDir);
 
-  await buildSite({ inputDir: resolvedInput, outDir: resolvedOut, runEval, safetyRoot: process.cwd(), force });
+  await buildSite({
+    inputDir: resolvedInput,
+    outDir: resolvedOut,
+    runEval,
+    safetyRoot: process.cwd(),
+    force,
+    generatedAt: timestamps ? new Date().toISOString() : undefined,
+  });
   process.stdout.write(`Build complete: ${resolvedOut}\n`);
 }
 

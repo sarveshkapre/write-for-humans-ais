@@ -36,7 +36,8 @@ function parseArgs(argv) {
     const outDir = String(args.get("out") ?? "dist");
     const runEval = !args.has("no-eval");
     const force = Boolean(args.get("force"));
-    return { inputDir, outDir, runEval, force };
+    const timestamps = Boolean(args.get("timestamps"));
+    return { inputDir, outDir, runEval, force, timestamps };
 }
 async function printHelp() {
     const version = await readVersion();
@@ -51,6 +52,7 @@ async function printHelp() {
         "  --out <dir>     Output directory (default: dist)",
         "  --no-eval       Skip eval report generation",
         "  --force         Allow deleting out dir outside cwd (dangerous)",
+        "  --timestamps    Include wall-clock timestamps in outputs (non-deterministic)",
         "  --version, -v   Print version and exit",
         "  --help, -h      Print help and exit",
         "",
@@ -70,10 +72,17 @@ async function main() {
         await printHelp();
         return;
     }
-    const { inputDir, outDir, runEval, force } = parseArgs(args);
+    const { inputDir, outDir, runEval, force, timestamps } = parseArgs(args);
     const resolvedInput = path.resolve(process.cwd(), inputDir);
     const resolvedOut = path.resolve(process.cwd(), outDir);
-    await buildSite({ inputDir: resolvedInput, outDir: resolvedOut, runEval, safetyRoot: process.cwd(), force });
+    await buildSite({
+        inputDir: resolvedInput,
+        outDir: resolvedOut,
+        runEval,
+        safetyRoot: process.cwd(),
+        force,
+        generatedAt: timestamps ? new Date().toISOString() : undefined,
+    });
     process.stdout.write(`Build complete: ${resolvedOut}\n`);
 }
 main().catch((error) => {

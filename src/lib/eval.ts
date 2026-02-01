@@ -61,7 +61,11 @@ export async function loadQuestions(inputDir: string): Promise<EvalQuestion[] | 
   }
 }
 
-export function runEval(questions: EvalQuestion[], corpus: { path: string; content: string }[]): EvalReport {
+export function runEval(
+  questions: EvalQuestion[],
+  corpus: { path: string; content: string }[],
+  generatedAt: string,
+): EvalReport {
   const results: EvalResult[] = [];
 
   for (const question of questions) {
@@ -92,7 +96,7 @@ export function runEval(questions: EvalQuestion[], corpus: { path: string; conte
     : null;
 
   return {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     totalQuestions: results.length,
     averageCoverage,
     results,

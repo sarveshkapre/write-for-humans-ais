@@ -9,3 +9,4 @@
 - Refuse output directories inside the input directory (prevents self-ingesting generated markdown).
 - Fix file discovery path-boundary checks and make `npm test` build automatically.
 - Stop ignoring `build/` so package installs include the compiled CLI entrypoint.
+- Make `build.fingerprint` deterministic across output directories and (by default) across runs.

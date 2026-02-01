@@ -17,5 +17,18 @@ test("builds outputs from a local directory", async () => {
 
   assert.ok(llms.includes("llms.txt"));
   assert.ok(Object.prototype.hasOwnProperty.call(JSON.parse(manifest), "llms.txt"));
+  assert.ok(Object.prototype.hasOwnProperty.call(JSON.parse(manifest), "build.fingerprint"));
   assert.equal(JSON.parse(report).totalQuestions, 1);
+});
+
+test("produces a deterministic build fingerprint for identical inputs", async () => {
+  const outDirA = await fs.mkdtemp(path.join(os.tmpdir(), "wfha-a-"));
+  const outDirB = await fs.mkdtemp(path.join(os.tmpdir(), "wfha-b-"));
+
+  await buildSite({ inputDir: fixtureDir, outDir: outDirA, runEval: true });
+  await buildSite({ inputDir: fixtureDir, outDir: outDirB, runEval: true });
+
+  const fpA = await fs.readFile(path.join(outDirA, "build.fingerprint"), "utf-8");
+  const fpB = await fs.readFile(path.join(outDirB, "build.fingerprint"), "utf-8");
+  assert.equal(fpA, fpB);
 });

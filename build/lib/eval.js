@@ -40,7 +40,7 @@ export async function loadQuestions(inputDir) {
         return null;
     }
 }
-export function runEval(questions, corpus) {
+export function runEval(questions, corpus, generatedAt) {
     const results = [];
     for (const question of questions) {
         const ranked = corpus
@@ -66,7 +66,7 @@ export function runEval(questions, corpus) {
         ? coverageValues.reduce((a, b) => a + b, 0) / coverageValues.length
         : null;
     return {
-        generatedAt: new Date().toISOString(),
+        generatedAt,
         totalQuestions: results.length,
         averageCoverage,
         results,

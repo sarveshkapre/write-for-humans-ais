@@ -7,6 +7,7 @@
 - Harder-to-footgun internals: improved path-boundary checks in file discovery.
 - Dev ergonomics: `npm test` now runs a build automatically via `pretest`.
 - Packaging hygiene: stop ignoring `build/` so installs include the compiled `wfha` bin.
+- Deterministic builds: `build.fingerprint` now depends on output content (relative paths + hashes), not absolute output paths; timestamps are opt-in via `--timestamps`.
 
 ## Verified
 ```bash
