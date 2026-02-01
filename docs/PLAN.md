@@ -22,7 +22,7 @@ Publish a static site (or existing docs/marketing site) into AI-canonical artifa
 - TypeScript
 - CLI-first (no server in MVP)
 - `remark`/`rehype` for Markdown/HTML transforms
-- `vitest` for tests
+- Node’s built-in `node:test` for tests
 - `tsx` for dev scripts
 
 Rationale: fast iteration, rich Markdown/HTML ecosystem, easy CLI distribution, and cross-platform compatibility.

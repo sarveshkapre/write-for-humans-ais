@@ -17,6 +17,9 @@ npm run build
 npm run wfha -- --input ./examples/site --out ./dist
 ```
 
+Safety note: by default the CLI refuses to wipe an output directory outside the current working directory (or equal to it). If you really need that, pass `--force`.
+Also, the output directory must be outside the input directory to avoid accidentally ingesting generated files.
+
 ## Outputs (MVP target)
 - `dist/llms.txt`
 - `dist/llms-full.txt`

@@ -10,6 +10,8 @@ export type BuildOptions = {
   inputDir: string;
   outDir: string;
   runEval: boolean;
+  safetyRoot?: string;
+  force?: boolean;
 };
 
 type PageOutput = {
@@ -146,7 +148,7 @@ export async function buildSite(options: BuildOptions): Promise<void> {
   const inputDir = path.resolve(options.inputDir);
   const outDir = path.resolve(options.outDir);
 
-  await ensureEmptyDir(outDir);
+  await ensureEmptyDir(outDir, { inputDir, safetyRoot: options.safetyRoot, force: options.force });
 
   const pages = await buildPages(inputDir, outDir);
   const outputFiles: string[] = pages.map((p) => p.markdownPath);

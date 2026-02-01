@@ -1,6 +1,21 @@
 #!/usr/bin/env node
+import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildSite } from "../lib/pipeline.js";
+import { UserError } from "../lib/errors.js";
+async function readVersion() {
+    try {
+        const here = path.dirname(fileURLToPath(import.meta.url));
+        const pkgPath = path.resolve(here, "../../package.json");
+        const raw = await fs.readFile(pkgPath, "utf-8");
+        const pkg = JSON.parse(raw);
+        return typeof pkg.version === "string" ? pkg.version : null;
+    }
+    catch {
+        return null;
+    }
+}
 function parseArgs(argv) {
     const args = new Map();
     for (let i = 0; i < argv.length; i += 1) {
@@ -20,30 +35,52 @@ function parseArgs(argv) {
     const inputDir = String(args.get("input") ?? ".");
     const outDir = String(args.get("out") ?? "dist");
     const runEval = !args.has("no-eval");
-    return { inputDir, outDir, runEval };
+    const force = Boolean(args.get("force"));
+    return { inputDir, outDir, runEval, force };
 }
-function printHelp() {
+async function printHelp() {
+    const version = await readVersion();
     process.stdout.write([
-        "Write for Humans + AIs",
+        `Write for Humans + AIs${version ? ` v${version}` : ""}`,
         "",
         "Usage:",
-        "  wfha --input <dir> --out <dir> [--no-eval]",
+        "  wfha --input <dir> --out <dir> [--no-eval] [--force]",
+        "",
+        "Options:",
+        "  --input <dir>   Input directory (default: .)",
+        "  --out <dir>     Output directory (default: dist)",
+        "  --no-eval       Skip eval report generation",
+        "  --force         Allow deleting out dir outside cwd (dangerous)",
+        "  --version, -v   Print version and exit",
+        "  --help, -h      Print help and exit",
+        "",
+        "Notes:",
+        "  - The output directory must be outside the input directory.",
         "",
     ].join("\n"));
 }
 async function main() {
     const args = process.argv.slice(2);
-    if (args.includes("--help") || args.includes("-h")) {
-        printHelp();
+    if (args.includes("--version") || args.includes("-v")) {
+        const version = await readVersion();
+        process.stdout.write(`${version ?? "unknown"}\n`);
         return;
     }
-    const { inputDir, outDir, runEval } = parseArgs(args);
+    if (args.includes("--help") || args.includes("-h")) {
+        await printHelp();
+        return;
+    }
+    const { inputDir, outDir, runEval, force } = parseArgs(args);
     const resolvedInput = path.resolve(process.cwd(), inputDir);
     const resolvedOut = path.resolve(process.cwd(), outDir);
-    await buildSite({ inputDir: resolvedInput, outDir: resolvedOut, runEval });
+    await buildSite({ inputDir: resolvedInput, outDir: resolvedOut, runEval, safetyRoot: process.cwd(), force });
     process.stdout.write(`Build complete: ${resolvedOut}\n`);
 }
 main().catch((error) => {
+    if (error instanceof UserError) {
+        console.error(error.message);
+        process.exit(1);
+    }
     console.error(error);
     process.exit(1);
 });

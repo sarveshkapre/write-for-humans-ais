@@ -119,7 +119,7 @@ async function writeEval(outDir, inputDir, pages) {
 export async function buildSite(options) {
     const inputDir = path.resolve(options.inputDir);
     const outDir = path.resolve(options.outDir);
-    await ensureEmptyDir(outDir);
+    await ensureEmptyDir(outDir, { inputDir, safetyRoot: options.safetyRoot, force: options.force });
     const pages = await buildPages(inputDir, outDir);
     const outputFiles = pages.map((p) => p.markdownPath);
     const llmsFiles = await writeLlmsFiles(outDir, pages);
