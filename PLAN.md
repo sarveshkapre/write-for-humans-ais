@@ -29,6 +29,7 @@ npm run wfha -- --input ./examples/site --out ./dist
 ```
 
 ## Shipped (Most Recent First)
+- 2026-02-01: Skip symlinked directories by default during discovery (`--follow-symlinks` to include).
 - 2026-02-01: Safer file discovery defaults (ignore `node_modules/`, `build/`, `dist/`, `.git/` with `--no-ignore` escape hatch).
 - 2026-02-01: Deterministic builds by default (`--timestamps` opt-in) + stable content-based `build.fingerprint`.
 - 2026-02-01: Add output-dir safety rails (`--force`), prevent output-inside-input footgun, improve CLI help/version, and harden path traversal checks.

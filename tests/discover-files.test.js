@@ -32,3 +32,26 @@ test("discoverFiles can include ignored dirs with noIgnore", async () => {
   assert.deepEqual(rels, ["index.md", "node_modules/dep/readme.md"]);
 });
 
+test("discoverFiles ignores symlinks by default", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "wfha-discover-"));
+  await writeFile(path.join(root, "index.md"), "# Hello\n");
+  const target = path.join(root, "target");
+  await writeFile(path.join(target, "linked.md"), "# Linked\n");
+  await fs.symlink(target, path.join(root, "linked"));
+
+  const files = await discoverFiles(root);
+  const rels = files.map((f) => path.relative(root, f).replace(/\\\\/g, "/")).sort();
+  assert.deepEqual(rels, ["index.md", "target/linked.md"]);
+});
+
+test("discoverFiles can follow symlinks when enabled", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "wfha-discover-"));
+  await writeFile(path.join(root, "index.md"), "# Hello\n");
+  const target = path.join(root, "target");
+  await writeFile(path.join(target, "linked.md"), "# Linked\n");
+  await fs.symlink(target, path.join(root, "linked"));
+
+  const files = await discoverFiles(root, { followSymlinks: true });
+  const rels = files.map((f) => path.relative(root, f).replace(/\\\\/g, "/")).sort();
+  assert.deepEqual(rels, ["index.md", "linked/linked.md", "target/linked.md"]);
+});

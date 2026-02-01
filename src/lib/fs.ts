@@ -8,6 +8,7 @@ const defaultIgnoredDirNames = new Set(["node_modules", "build", "dist", ".git"]
 export type DiscoverFilesOptions = {
   noIgnore?: boolean;
   ignoredDirNames?: string[];
+  followSymlinks?: boolean;
 };
 
 type EnsureEmptyDirOptions = {
@@ -35,6 +36,7 @@ export async function discoverFiles(rootDir: string, options: DiscoverFilesOptio
   const ignored = options.noIgnore
     ? new Set<string>()
     : new Set([...(options.ignoredDirNames ?? []), ...defaultIgnoredDirNames]);
+  const followSymlinks = Boolean(options.followSymlinks);
 
   async function walk(current: string): Promise<void> {
     const entries = await fs.readdir(current, { withFileTypes: true });
@@ -43,6 +45,15 @@ export async function discoverFiles(rootDir: string, options: DiscoverFilesOptio
       const resolved = path.resolve(fullPath);
       if (!isPathInside(rootResolved, resolved)) {
         continue;
+      }
+      if (entry.isSymbolicLink()) {
+        if (!followSymlinks) continue;
+        const stats = await fs.stat(fullPath);
+        if (stats.isDirectory()) {
+          if (ignored.has(entry.name)) continue;
+          await walk(fullPath);
+          continue;
+        }
       }
       if (entry.isDirectory()) {
         if (ignored.has(entry.name)) continue;

@@ -38,7 +38,8 @@ function parseArgs(argv) {
     const force = Boolean(args.get("force"));
     const timestamps = Boolean(args.get("timestamps"));
     const noIgnore = Boolean(args.get("no-ignore"));
-    return { inputDir, outDir, runEval, force, timestamps, noIgnore };
+    const followSymlinks = Boolean(args.get("follow-symlinks"));
+    return { inputDir, outDir, runEval, force, timestamps, noIgnore, followSymlinks };
 }
 async function printHelp() {
     const version = await readVersion();
@@ -55,6 +56,7 @@ async function printHelp() {
         "  --force         Allow deleting out dir outside cwd (dangerous)",
         "  --timestamps    Include wall-clock timestamps in outputs (non-deterministic)",
         "  --no-ignore     Do not ignore common dirs (node_modules/build/dist/.git)",
+        "  --follow-symlinks  Traverse symlinked directories during discovery",
         "  --version, -v   Print version and exit",
         "  --help, -h      Print help and exit",
         "",
@@ -74,7 +76,7 @@ async function main() {
         await printHelp();
         return;
     }
-    const { inputDir, outDir, runEval, force, timestamps, noIgnore } = parseArgs(args);
+    const { inputDir, outDir, runEval, force, timestamps, noIgnore, followSymlinks } = parseArgs(args);
     const resolvedInput = path.resolve(process.cwd(), inputDir);
     const resolvedOut = path.resolve(process.cwd(), outDir);
     await buildSite({
@@ -85,6 +87,7 @@ async function main() {
         force,
         generatedAt: timestamps ? new Date().toISOString() : undefined,
         noIgnore,
+        followSymlinks,
     });
     process.stdout.write(`Build complete: ${resolvedOut}\n`);
 }

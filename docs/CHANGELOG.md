@@ -11,3 +11,4 @@
 - Stop ignoring `build/` so package installs include the compiled CLI entrypoint.
 - Make `build.fingerprint` deterministic across output directories and (by default) across runs.
 - Ignore common heavy/irrelevant directories during file discovery by default (`--no-ignore` to include).
+- Skip symlinked directories by default during discovery (`--follow-symlinks` to include).

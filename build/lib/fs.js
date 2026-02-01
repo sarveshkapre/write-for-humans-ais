@@ -21,6 +21,7 @@ export async function discoverFiles(rootDir, options = {}) {
     const ignored = options.noIgnore
         ? new Set()
         : new Set([...(options.ignoredDirNames ?? []), ...defaultIgnoredDirNames]);
+    const followSymlinks = Boolean(options.followSymlinks);
     async function walk(current) {
         const entries = await fs.readdir(current, { withFileTypes: true });
         for (const entry of entries) {
@@ -28,6 +29,17 @@ export async function discoverFiles(rootDir, options = {}) {
             const resolved = path.resolve(fullPath);
             if (!isPathInside(rootResolved, resolved)) {
                 continue;
+            }
+            if (entry.isSymbolicLink()) {
+                if (!followSymlinks)
+                    continue;
+                const stats = await fs.stat(fullPath);
+                if (stats.isDirectory()) {
+                    if (ignored.has(entry.name))
+                        continue;
+                    await walk(fullPath);
+                    continue;
+                }
             }
             if (entry.isDirectory()) {
                 if (ignored.has(entry.name))

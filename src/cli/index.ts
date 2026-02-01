@@ -24,6 +24,7 @@ function parseArgs(argv: string[]): {
   force: boolean;
   timestamps: boolean;
   noIgnore: boolean;
+  followSymlinks: boolean;
 } {
   const args = new Map<string, string | boolean>();
   for (let i = 0; i < argv.length; i += 1) {
@@ -45,8 +46,9 @@ function parseArgs(argv: string[]): {
   const force = Boolean(args.get("force"));
   const timestamps = Boolean(args.get("timestamps"));
   const noIgnore = Boolean(args.get("no-ignore"));
+  const followSymlinks = Boolean(args.get("follow-symlinks"));
 
-  return { inputDir, outDir, runEval, force, timestamps, noIgnore };
+  return { inputDir, outDir, runEval, force, timestamps, noIgnore, followSymlinks };
 }
 
 async function printHelp(): Promise<void> {
@@ -65,6 +67,7 @@ async function printHelp(): Promise<void> {
       "  --force         Allow deleting out dir outside cwd (dangerous)",
       "  --timestamps    Include wall-clock timestamps in outputs (non-deterministic)",
       "  --no-ignore     Do not ignore common dirs (node_modules/build/dist/.git)",
+      "  --follow-symlinks  Traverse symlinked directories during discovery",
       "  --version, -v   Print version and exit",
       "  --help, -h      Print help and exit",
       "",
@@ -87,7 +90,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { inputDir, outDir, runEval, force, timestamps, noIgnore } = parseArgs(args);
+  const { inputDir, outDir, runEval, force, timestamps, noIgnore, followSymlinks } = parseArgs(args);
   const resolvedInput = path.resolve(process.cwd(), inputDir);
   const resolvedOut = path.resolve(process.cwd(), outDir);
 
@@ -99,6 +102,7 @@ async function main(): Promise<void> {
     force,
     generatedAt: timestamps ? new Date().toISOString() : undefined,
     noIgnore,
+    followSymlinks,
   });
   process.stdout.write(`Build complete: ${resolvedOut}\n`);
 }
