@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { UserError } from "./errors.js";
 const allowedExtensions = new Set([".md", ".markdown", ".html", ".htm"]);
+const defaultIgnoredDirNames = new Set(["node_modules", "build", "dist", ".git"]);
 function isPathInside(parentDir, candidatePath) {
     const parent = path.resolve(parentDir);
     const candidate = path.resolve(candidatePath);
@@ -14,9 +15,12 @@ function isFsRoot(dirPath) {
     const resolved = path.resolve(dirPath);
     return resolved === path.parse(resolved).root;
 }
-export async function discoverFiles(rootDir) {
+export async function discoverFiles(rootDir, options = {}) {
     const results = [];
     const rootResolved = path.resolve(rootDir);
+    const ignored = options.noIgnore
+        ? new Set()
+        : new Set([...(options.ignoredDirNames ?? []), ...defaultIgnoredDirNames]);
     async function walk(current) {
         const entries = await fs.readdir(current, { withFileTypes: true });
         for (const entry of entries) {
@@ -26,6 +30,8 @@ export async function discoverFiles(rootDir) {
                 continue;
             }
             if (entry.isDirectory()) {
+                if (ignored.has(entry.name))
+                    continue;
                 await walk(fullPath);
                 continue;
             }

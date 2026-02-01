@@ -15,8 +15,8 @@ function extractTitle(markdown, fallback) {
     }
     return fallback;
 }
-async function buildPages(inputDir, outDir) {
-    const files = await discoverFiles(inputDir);
+async function buildPages(inputDir, outDir, options) {
+    const files = await discoverFiles(inputDir, { noIgnore: options.noIgnore });
     const pages = [];
     const markdownDir = path.join(outDir, "markdown");
     await fs.mkdir(markdownDir, { recursive: true });
@@ -130,7 +130,7 @@ export async function buildSite(options) {
     const outDir = path.resolve(options.outDir);
     await ensureEmptyDir(outDir, { inputDir, safetyRoot: options.safetyRoot, force: options.force });
     const generatedAt = options.generatedAt ?? new Date(0).toISOString();
-    const pages = await buildPages(inputDir, outDir);
+    const pages = await buildPages(inputDir, outDir, { noIgnore: Boolean(options.noIgnore) });
     const outputFiles = pages.map((p) => p.markdownPath);
     const llmsFiles = await writeLlmsFiles(outDir, pages);
     outputFiles.push(...llmsFiles);

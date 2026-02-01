@@ -10,3 +10,4 @@
 - Fix file discovery path-boundary checks and make `npm test` build automatically.
 - Stop ignoring `build/` so package installs include the compiled CLI entrypoint.
 - Make `build.fingerprint` deterministic across output directories and (by default) across runs.
+- Ignore common heavy/irrelevant directories during file discovery by default (`--no-ignore` to include).

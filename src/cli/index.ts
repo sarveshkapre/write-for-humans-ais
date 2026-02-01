@@ -23,6 +23,7 @@ function parseArgs(argv: string[]): {
   runEval: boolean;
   force: boolean;
   timestamps: boolean;
+  noIgnore: boolean;
 } {
   const args = new Map<string, string | boolean>();
   for (let i = 0; i < argv.length; i += 1) {
@@ -43,8 +44,9 @@ function parseArgs(argv: string[]): {
   const runEval = !args.has("no-eval");
   const force = Boolean(args.get("force"));
   const timestamps = Boolean(args.get("timestamps"));
+  const noIgnore = Boolean(args.get("no-ignore"));
 
-  return { inputDir, outDir, runEval, force, timestamps };
+  return { inputDir, outDir, runEval, force, timestamps, noIgnore };
 }
 
 async function printHelp(): Promise<void> {
@@ -62,6 +64,7 @@ async function printHelp(): Promise<void> {
       "  --no-eval       Skip eval report generation",
       "  --force         Allow deleting out dir outside cwd (dangerous)",
       "  --timestamps    Include wall-clock timestamps in outputs (non-deterministic)",
+      "  --no-ignore     Do not ignore common dirs (node_modules/build/dist/.git)",
       "  --version, -v   Print version and exit",
       "  --help, -h      Print help and exit",
       "",
@@ -84,7 +87,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { inputDir, outDir, runEval, force, timestamps } = parseArgs(args);
+  const { inputDir, outDir, runEval, force, timestamps, noIgnore } = parseArgs(args);
   const resolvedInput = path.resolve(process.cwd(), inputDir);
   const resolvedOut = path.resolve(process.cwd(), outDir);
 
@@ -95,6 +98,7 @@ async function main(): Promise<void> {
     safetyRoot: process.cwd(),
     force,
     generatedAt: timestamps ? new Date().toISOString() : undefined,
+    noIgnore,
   });
   process.stdout.write(`Build complete: ${resolvedOut}\n`);
 }

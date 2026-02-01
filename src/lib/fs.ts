@@ -3,6 +3,12 @@ import path from "node:path";
 import { UserError } from "./errors.js";
 
 const allowedExtensions = new Set([".md", ".markdown", ".html", ".htm"]);
+const defaultIgnoredDirNames = new Set(["node_modules", "build", "dist", ".git"]);
+
+export type DiscoverFilesOptions = {
+  noIgnore?: boolean;
+  ignoredDirNames?: string[];
+};
 
 type EnsureEmptyDirOptions = {
   inputDir?: string;
@@ -23,9 +29,12 @@ function isFsRoot(dirPath: string): boolean {
   return resolved === path.parse(resolved).root;
 }
 
-export async function discoverFiles(rootDir: string): Promise<string[]> {
+export async function discoverFiles(rootDir: string, options: DiscoverFilesOptions = {}): Promise<string[]> {
   const results: string[] = [];
   const rootResolved = path.resolve(rootDir);
+  const ignored = options.noIgnore
+    ? new Set<string>()
+    : new Set([...(options.ignoredDirNames ?? []), ...defaultIgnoredDirNames]);
 
   async function walk(current: string): Promise<void> {
     const entries = await fs.readdir(current, { withFileTypes: true });
@@ -36,6 +45,7 @@ export async function discoverFiles(rootDir: string): Promise<string[]> {
         continue;
       }
       if (entry.isDirectory()) {
+        if (ignored.has(entry.name)) continue;
         await walk(fullPath);
         continue;
       }

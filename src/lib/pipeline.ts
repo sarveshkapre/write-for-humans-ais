@@ -15,6 +15,7 @@ export type BuildOptions = {
   safetyRoot?: string;
   force?: boolean;
   generatedAt?: string;
+  noIgnore?: boolean;
 };
 
 type PageOutput = {
@@ -35,8 +36,8 @@ function extractTitle(markdown: string, fallback: string): string {
   return fallback;
 }
 
-async function buildPages(inputDir: string, outDir: string): Promise<PageOutput[]> {
-  const files = await discoverFiles(inputDir);
+async function buildPages(inputDir: string, outDir: string, options: { noIgnore: boolean }): Promise<PageOutput[]> {
+  const files = await discoverFiles(inputDir, { noIgnore: options.noIgnore });
   const pages: PageOutput[] = [];
   const markdownDir = path.join(outDir, "markdown");
   await fs.mkdir(markdownDir, { recursive: true });
@@ -170,7 +171,7 @@ export async function buildSite(options: BuildOptions): Promise<void> {
   await ensureEmptyDir(outDir, { inputDir, safetyRoot: options.safetyRoot, force: options.force });
   const generatedAt = options.generatedAt ?? new Date(0).toISOString();
 
-  const pages = await buildPages(inputDir, outDir);
+  const pages = await buildPages(inputDir, outDir, { noIgnore: Boolean(options.noIgnore) });
   const outputFiles: string[] = pages.map((p) => p.markdownPath);
 
   const llmsFiles = await writeLlmsFiles(outDir, pages);
