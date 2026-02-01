@@ -157,4 +157,9 @@ export async function buildSite(options) {
     const manifestPath = await writeManifest(outDir, fullManifest);
     outputFiles.push(fingerprintPath, manifestPath);
     // Note: build.fingerprint intentionally excludes itself and manifest.json.
+    return {
+        pages: pages.length,
+        outputs: outputFiles.map((filePath) => path.relative(outDir, filePath).replace(/\\/g, "/")).sort(),
+        evalEnabled: Boolean(options.runEval),
+    };
 }

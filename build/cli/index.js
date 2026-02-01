@@ -79,7 +79,7 @@ async function main() {
     const { inputDir, outDir, runEval, force, timestamps, noIgnore, followSymlinks } = parseArgs(args);
     const resolvedInput = path.resolve(process.cwd(), inputDir);
     const resolvedOut = path.resolve(process.cwd(), outDir);
-    await buildSite({
+    const summary = await buildSite({
         inputDir: resolvedInput,
         outDir: resolvedOut,
         runEval,
@@ -89,7 +89,14 @@ async function main() {
         noIgnore,
         followSymlinks,
     });
-    process.stdout.write(`Build complete: ${resolvedOut}\n`);
+    const lines = [
+        `Build complete: ${resolvedOut}`,
+        `Pages: ${summary.pages}`,
+        `Eval: ${summary.evalEnabled ? "on" : "off"}`,
+        `Outputs (${summary.outputs.length}):`,
+        ...summary.outputs.map((output) => `- ${output}`),
+    ];
+    process.stdout.write(`${lines.join("\n")}\n`);
 }
 main().catch((error) => {
     if (error instanceof UserError) {

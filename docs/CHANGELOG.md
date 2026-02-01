@@ -12,3 +12,4 @@
 - Make `build.fingerprint` deterministic across output directories and (by default) across runs.
 - Ignore common heavy/irrelevant directories during file discovery by default (`--no-ignore` to include).
 - Skip symlinked directories by default during discovery (`--follow-symlinks` to include).
+- Add a concise post-build summary to CLI output (pages/eval/outputs).

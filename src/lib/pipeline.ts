@@ -19,6 +19,12 @@ export type BuildOptions = {
   followSymlinks?: boolean;
 };
 
+export type BuildSummary = {
+  pages: number;
+  outputs: string[];
+  evalEnabled: boolean;
+};
+
 type PageOutput = {
   title: string;
   slug: string;
@@ -172,7 +178,7 @@ async function writeEval(
   return reportPath;
 }
 
-export async function buildSite(options: BuildOptions): Promise<void> {
+export async function buildSite(options: BuildOptions): Promise<BuildSummary> {
   const inputDir = path.resolve(options.inputDir);
   const outDir = path.resolve(options.outDir);
 
@@ -210,4 +216,10 @@ export async function buildSite(options: BuildOptions): Promise<void> {
   outputFiles.push(fingerprintPath, manifestPath);
 
   // Note: build.fingerprint intentionally excludes itself and manifest.json.
+
+  return {
+    pages: pages.length,
+    outputs: outputFiles.map((filePath) => path.relative(outDir, filePath).replace(/\\/g, "/")).sort(),
+    evalEnabled: Boolean(options.runEval),
+  };
 }

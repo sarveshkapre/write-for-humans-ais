@@ -22,6 +22,7 @@ Also, the output directory must be outside the input directory to avoid accident
 By default builds are deterministic; pass `--timestamps` if you want wall-clock timestamps in outputs.
 File discovery ignores `node_modules/`, `build/`, `dist/`, and `.git/` by default; pass `--no-ignore` to include them.
 Symlinked directories are skipped by default; pass `--follow-symlinks` if you need them.
+CLI prints a concise build summary (pages, eval, outputs) after completion.
 
 ## Outputs (MVP target)
 - `dist/llms.txt`

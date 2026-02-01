@@ -10,6 +10,7 @@
 - Deterministic builds: `build.fingerprint` now depends on output content (relative paths + hashes), not absolute output paths; timestamps are opt-in via `--timestamps`.
 - File discovery now ignores `node_modules/`, `build/`, `dist/`, `.git/` by default; use `--no-ignore` to include them.
 - Symlinked directories are skipped by default during discovery; use `--follow-symlinks` to include them.
+- CLI now prints a concise build summary (pages/eval/outputs).
 
 ## Verified
 ```bash
